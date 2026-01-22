@@ -69,6 +69,9 @@ GO
 ------------------------------------------------------------ 
 -- Add unique constraint to prevent multiple scans per meal/day 
 ------------------------------------------------------------
+ALTER TABLE dbo.CanteenScans
+	ADD ScanDay as CAST(ScanDate AS DATE) PERSISTED;
+
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -78,7 +81,7 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE dbo.CanteenScans
     ADD CONSTRAINT UQ_CanteenScans_OnePerMealPerDay
-        UNIQUE (Barcode, MealType, CAST(ScanDate AS DATE));
+        UNIQUE (Barcode, MealType, ScanDay);
 
     PRINT 'Unique constraint UQ_CanteenScans_OnePerMealPerDay added successfully.';
 END;
@@ -163,7 +166,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.People)
 BEGIN
     INSERT INTO dbo.People (FullName, Barcode, RoleId) VALUES
     ('John Doe','SOD14090', 1),
-    ('Jane Doe','SOD19050', 1),
+    ('Jane Doe','SOD19050', 1);
     PRINT 'People table seeded successfully.';
 END;
 GO
