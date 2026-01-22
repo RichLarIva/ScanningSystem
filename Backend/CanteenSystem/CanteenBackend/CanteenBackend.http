@@ -1,0 +1,6 @@
+@CanteenBackend_HostAddress = http://localhost:5270
+
+GET {{CanteenBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

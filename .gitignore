@@ -426,3 +426,8 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Ignore local secrets 
+appsettings.Development.json 
+appsettings.Local.json
+appsettings.json

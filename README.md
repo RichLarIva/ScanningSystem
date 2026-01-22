@@ -110,7 +110,7 @@ git clone https://github.com/RichLarIva/ScanningSystem.git
 ### 2. Configure SQL Server
 Run the SQL initialization script located in the `Database` folder to create the necessary tables and stored procedures.
 ### 3. Configure Backend
-* Add connection string to `backend/appsettings.json`
+* Add connection string to `Backend\CanteenSystem\CanteenBackend\appsettings.json`
 * Register `MealSessionState` as a singleton
 * Enable SSE endpoint
 ### 4. Run Frontend
