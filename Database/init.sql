@@ -204,60 +204,57 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Validate barcode
     IF NOT EXISTS (SELECT 1 FROM dbo.People WHERE Barcode = @Barcode)
     BEGIN
-        SELECT 0 AS Success, ''Invalid Barcode'' AS Message;
+        SELECT 
+            0 AS Success, 
+            ''Invalid Barcode'' AS Message,
+            NULL AS PersonName,
+            @MealType AS MealType;
         RETURN;
     END
 
+    -- Validate meal type
     IF NOT EXISTS (SELECT 1 FROM dbo.MealTypes WHERE MealTypeId = @MealType)
     BEGIN
-        SELECT 0 AS Success, ''Invalid Meal Type'' AS Message;
+        SELECT 
+            0 AS Success, 
+            ''Invalid Meal Type'' AS Message,
+            NULL AS PersonName,
+            @MealType AS MealType;
         RETURN;
     END
+
+    DECLARE @PersonName NVARCHAR(200);
+    SELECT @PersonName = FullName FROM dbo.People WHERE Barcode = @Barcode;
 
     BEGIN TRY
         INSERT INTO dbo.CanteenScans (Barcode, MealType)
         VALUES (@Barcode, @MealType);
 
-        SELECT 1 AS Success, ''Canteen scan recorded successfully.'' AS Message;
+        SELECT 
+            1 AS Success, 
+            ''Canteen scan recorded successfully.'' AS Message,
+            @PersonName AS PersonName,
+            @MealType AS MealType;
     END TRY
     BEGIN CATCH
         IF ERROR_NUMBER() = 2627
-            SELECT 0 AS Success, ''Already scanned for this meal today.'' AS Message;
+            SELECT 
+                0 AS Success, 
+                ''Already scanned for this meal today.'' AS Message,
+                @PersonName AS PersonName,
+                @MealType AS MealType;
         ELSE
-            SELECT 0 AS Success, ''Error: '' + ERROR_MESSAGE() AS Message;
+            SELECT 
+                0 AS Success, 
+                ''Error: '' + ERROR_MESSAGE() AS Message,
+                @PersonName AS PersonName,
+                @MealType AS MealType;
     END CATCH
 END
 ');
-END;
-GO
-
-IF NOT EXISTS (
-    SELECT 1 FROM sys.procedures WHERE name = 'sp_RecordCanteenScan'
-)
-BEGIN
-    EXEC('
-    CREATE PROCEDURE sp_BulkInsertPeople
-    @FullName NVARCHAR(255),
-    @Barcode NVARCHAR(50),
-    @RoleId TINYINT
-    AS
-    BEGIN
-        SET NOCOUNT ON;
-    
-        IF EXISTS (SELECT 1 FROM People WHERE Barcode = @Barcode)
-        BEGIN
-            SELECT 0 AS Success, ''Duplicate barcode: '' + @Barcode AS Message;
-            RETURN;
-        END
-    
-        INSERT INTO People (FullName, Barcode, RoleId)
-        VALUES (@FullName, @Barcode, @RoleId);
-    
-        SELECT 1 AS Success, ''Inserted: '' + @FullName AS Message;
-    END
-    ');
 END;
 GO
 
@@ -321,3 +318,5 @@ GO
 
 
 SELECT * FROM CanteenScans;
+
+DELETE FROM dbo.CanteenScans;

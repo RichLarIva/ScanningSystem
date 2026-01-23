@@ -53,29 +53,50 @@
   font-weight: bold;
 }
 
-/* Name list container */
-.names {
-  display: flex;
-  flex-direction: column;
+.name-list-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 90%;
   max-width: var(--max-content-width);
-  margin: auto;
-  overflow-y: auto;
-  padding-bottom: var(--spacing-lg);
+  max-height: 50vh;
+  overflow-y: scroll; /* still scrollable */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5000;
+
+  /* Hide scrollbar for Chrome, Safari, Edge */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.name-list-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+/* Name list itself */
+.names {
+  background: transparent; /* removes gray background */
+  width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 /* Individual name entry */
 .name {
-  margin: var(--spacing-sm) 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
   background: var(--color-primary);
   color: var(--color-text);
   padding: var(--spacing-md);
   border-radius: 6px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
+
 
 /* Popup */
 .popup {

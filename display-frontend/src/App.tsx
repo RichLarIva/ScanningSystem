@@ -5,6 +5,7 @@ import BubbleBackground from './components/BubbleBackground'
 import Header from './components/Header'
 import { Meal } from './types/Meal'
 import ScannedPopup from './components/ScannedPopup';
+import NameList from './components/NameList';
 
 function App() {
 
@@ -16,9 +17,9 @@ function App() {
     "scan-success": (data) => {
       const now = new Date();
       const time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-
+      console.table(data);
       setNames((prev) => [
-        {id: prev.length + 1, name: data.barcode, timeStamp: time},
+        {id: prev.length + 1, name: data.name, timeStamp: time},
         ...prev,
       ])
       console.log("hey data meal: " + data.meal);
@@ -76,6 +77,9 @@ function App() {
         })}
       />
       {isOpen && ( <ScannedPopup/>)}
+      <div className="name-list-container"> 
+        <NameList names={names}/> 
+      </div>
       <BubbleBackground/>
     </div>
   )

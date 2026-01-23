@@ -12,9 +12,6 @@ namespace CanteenBackend.Data.Repositories
     {
         private readonly SqlDataManager _db;
 
-        /// <summary>
-        /// Creates a new ScanRepository using the provided SqlDataManager.
-        /// </summary>
         public ScanRepository(SqlDataManager db)
         {
             _db = db;
@@ -23,9 +20,6 @@ namespace CanteenBackend.Data.Repositories
         /// <summary>
         /// Calls the sp_RecordCanteenScan stored procedure to record a scan event.
         /// </summary>
-        /// <param name="barcode">The scanned barcode.</param>
-        /// <param name="meal">The meal type being recorded.</param>
-        /// <returns>A ScanResult struct containing success status and message.</returns>
         public ScanResult RecordScan(string barcode, MealType meal)
         {
             var cmd = _db.CreateCommand("sp_RecordCanteenScan", CommandType.StoredProcedure);
@@ -39,9 +33,19 @@ namespace CanteenBackend.Data.Repositories
 
             var row = table.Rows[0];
 
+            bool success = Convert.ToInt32(row["Success"]) == 1;
+            string message = row["Message"]?.ToString() ?? "";
+
+            // Match the actual column name returned by the stored procedure
+            string? personName = row.Table.Columns.Contains("PersonName")
+                ? row["PersonName"]?.ToString()
+                : null;
+
             return new ScanResult(
-                success: Convert.ToInt32(row["Success"]) == 1,
-                message: row["Message"].ToString() ?? ""
+                success: success,
+                message: message,
+                personName: personName,
+                meal: meal
             );
         }
     }

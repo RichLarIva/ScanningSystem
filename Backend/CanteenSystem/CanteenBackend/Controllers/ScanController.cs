@@ -69,7 +69,8 @@ namespace CanteenBackend.Controllers
             var successPayload = JsonSerializer.Serialize(new
             {
                 barcode,
-                result.Message,
+                name = result.PersonName,
+                message = result.Message,
                 meal = _mealSessionState.CurrentMeal.ToString(),
                 timestamp = DateTime.UtcNow
             });

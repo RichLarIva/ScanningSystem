@@ -84,7 +84,6 @@ namespace CanteenBackend.Services
             );
 
             await _eventStream.BroadcastAsync(message);
-
             return result;
         }
 
