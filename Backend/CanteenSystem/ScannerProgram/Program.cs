@@ -9,7 +9,7 @@ namespace ScannerProgram
     {
         private static readonly HttpClient Http = new()
         {
-            BaseAddress = new Uri("http://localhost:7220") // Backend URL
+            BaseAddress = new Uri("https://localhost:7220") // Backend URL
         };
 
         private static async Task Main(string[] args)
@@ -33,7 +33,7 @@ namespace ScannerProgram
         {
             try
             {
-                var response = await Http.PostAsJsonAsync("/api/scan", new { Barcode = barcode });
+                var response = await Http.PostAsJsonAsync("/api/scan", barcode );
 
                 if(response.IsSuccessStatusCode)
                 {
