@@ -33,9 +33,11 @@ namespace ScannerProgram
         {
             try
             {
-                var response = await Http.PostAsJsonAsync("/api/scan", barcode );
+                var payload = new { barcode = barcode };
 
-                if(response.IsSuccessStatusCode)
+                var response = await Http.PostAsJsonAsync("/api/scan", payload);
+
+                if (response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"Sent: {barcode}");
                 }
@@ -44,10 +46,11 @@ namespace ScannerProgram
                     Console.WriteLine($"Error sending barcode: {response.StatusCode}");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine($"Failed to send scan: {ex.Message}");
             }
         }
+
     }
 }

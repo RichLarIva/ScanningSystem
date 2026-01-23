@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useSSE } from "./hooks/useSSE";
 import './App.css'
 import BubbleBackground from './components/BubbleBackground'
 import Header from './components/Header'
@@ -8,9 +7,31 @@ import { Meal } from './types/Meal'
 
 function App() {
 
+  const [names, setNames] = useState<any[]>([]);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentMeal, setCurrentMeal] = useState<Meal>(Meal.Breakfast); 
-  const [dateState, setDateState] = useState(new Date()); const [dayState, setDayState] = useState(new Date());
 
+  useSSE("https://localhost:7220/events", {
+    "scan-success": (data) => {
+      const now = new Date();
+      const time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+
+      setNames((prev) => [
+        {id: prev.length + 1, name: data.barcode, timeStamp: time},
+        ...prev,
+      ])
+      setCurrentMeal(data.meal);
+    },
+
+    "duplicate-scan": () =>
+    {
+      setIsOpen(true);
+      setTimeout(() => setIsOpen(false), 4000);
+    }
+  });
+
+  const [dateState, setDateState] = useState(new Date()); 
+  const [dayState, setDayState] = useState(new Date());
   const weekDay = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", ];
 
   useEffect(() => {

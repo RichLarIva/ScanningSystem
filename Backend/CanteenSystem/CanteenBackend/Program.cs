@@ -17,6 +17,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ------------------------------------------------------------
+// CORS (required for frontend + SSE)
+// ------------------------------------------------------------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Type");
+    });
+});
+
+// ------------------------------------------------------------
 // Database Connection
 // ------------------------------------------------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -85,8 +101,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// CORS must be BEFORE authentication and controllers
+app.UseCors("FrontendPolicy");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 // ------------------------------------------------------------

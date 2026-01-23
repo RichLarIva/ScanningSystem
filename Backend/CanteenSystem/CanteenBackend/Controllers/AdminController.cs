@@ -24,6 +24,7 @@ namespace CanteenBackend.Controllers
         /// </summary>
         /// <param name="file">The CSV file containing people data.</param>
         [HttpPost("import")]
+        [Consumes("multipart/form-data")]   // <-- REQUIRED for Swagger
         public async Task<IActionResult> ImportCsv([FromForm] IFormFile file)
         {
             if (file == null || file.Length == 0)
