@@ -1,0 +1,15 @@
+.canvas {
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(to top, hsl(0, 0%, 13%) 25%, hsl(313, 95%, 36%) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.bubble {
+  display: block;
+  border-radius: 100%;
+  opacity: 0.8;
+  position: absolute;
+  animation-fill-mode: forwards;
+}
