@@ -9,7 +9,7 @@ namespace ScannerProgram
     {
         private static readonly HttpClient Http = new()
         {
-            BaseAddress = new Uri("http://localhost:5000") // Backend URL
+            BaseAddress = new Uri("http://localhost:7220") // Backend URL
         };
 
         private static async Task Main(string[] args)
