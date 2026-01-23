@@ -47,4 +47,4 @@ const BubbleBackground: React.FC = () => {
   return <div className="canvas">{bubbles}</div>;
 };
 
-export default BubbleBackground;
+export default React.memo(BubbleBackground);
