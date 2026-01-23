@@ -213,3 +213,31 @@ END
 ');
 END;
 GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.procedures WHERE name = 'sp_RecordCanteenScan'
+)
+BEGIN
+    EXEC('
+    CREATE PROCEDURE sp_BulkInsertPeople
+    @FullName NVARCHAR(255),
+    @Barcode NVARCHAR(50),
+    @RoleId TINYINT
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+    
+        IF EXISTS (SELECT 1 FROM People WHERE Barcode = @Barcode)
+        BEGIN
+            SELECT 0 AS Success, ''Duplicate barcode: '' + @Barcode AS Message;
+            RETURN;
+        END
+    
+        INSERT INTO People (FullName, Barcode, RoleId)
+        VALUES (@FullName, @Barcode, @RoleId);
+    
+        SELECT 1 AS Success, ''Inserted: '' + @FullName AS Message;
+    END
+    ');
+END;
+GO
