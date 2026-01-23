@@ -6,11 +6,11 @@ const random = (min: number, max: number): number =>
   Math.floor(Math.random() * (max - min + 1) + min);
 
 const BubbleBackground: React.FC = () => {
-  const bubbles = Array.from({ length: 500 }, (_, i) => {
+  const bubbles = Array.from({ length: 300 }, (_, i) => {
     const size = random(5, 100);
     const left = `${random(1, 100)}vw`;
     const bottom = `${random(1, 100)}vh`;
-    const duration = `${random(3, 15)}s`;
+    const duration = `${random(7, 40)}s`;
     const bgPos = i % 2 === 0 ? "top right" : "center";
     const animationName = `move${i}`;
     const finalBottom = `${random(0, 100)}vh`;
