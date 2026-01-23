@@ -8,6 +8,7 @@ namespace CanteenBackend.Services
     /// Handles the full workflow of processing a canteen scan:
     /// - Validates the barcode
     /// - Retrieves the person
+    /// - Checks in-memory duplicate state
     /// - Records the scan via stored procedure
     /// - Broadcasts SSE updates to all connected clients
     /// </summary>
@@ -18,9 +19,6 @@ namespace CanteenBackend.Services
         private readonly MealSessionState _mealState;
         private readonly EventStream _eventStream;
 
-        /// <summary>
-        /// Creates a new ScanService with required dependencies.
-        /// </summary>
         public ScanService(
             ScanRepository scanRepository,
             PersonRepository personRepository,
@@ -34,12 +32,9 @@ namespace CanteenBackend.Services
         }
 
         /// <summary>
-        /// Processes a barcode scan by validating the person, recording the scan,
-        /// and broadcasting an SSE event to all connected clients.
-        /// Also broadcasts a duplicate-scan event if the person already scanned today.
+        /// Processes a barcode scan by validating the person, checking duplicates,
+        /// recording the scan, and broadcasting SSE events.
         /// </summary>
-        /// <param name="barcode">The scanned barcode.</param>
-        /// <returns>A ScanResult indicating success or failure.</returns>
         public async Task<ScanResult> ProcessScanAsync(string barcode)
         {
             // Lookup the person
@@ -49,11 +44,10 @@ namespace CanteenBackend.Services
                 return new ScanResult(false, "Unknown barcode");
             }
 
-            // Record the scan in the database
-            var result = _scanRepository.RecordScan(barcode, _mealState.CurrentMeal);
-
-            // Duplicate scan case
-            if (!result.Success && result.Message.Contains("Already scanned"))
+            // ------------------------------------------------------------
+            // In-memory duplicate detection (instant, no SQL call)
+            // ------------------------------------------------------------
+            if (_mealState.IsDuplicate(barcode))
             {
                 var duplicateMessage = new SseMessage(
                     evt: "scan-duplicate",
@@ -61,10 +55,29 @@ namespace CanteenBackend.Services
                 );
 
                 await _eventStream.BroadcastAsync(duplicateMessage);
+
+                return new ScanResult(false, "Already scanned for this meal.");
+            }
+
+            // ------------------------------------------------------------
+            // Record the scan in the database
+            // ------------------------------------------------------------
+            var result = _scanRepository.RecordScan(barcode, _mealState.CurrentMeal);
+
+            if (!result.Success)
+            {
+                // SQL rejected it (rare, but possible)
                 return result;
             }
 
-            // Normal scan case
+            // ------------------------------------------------------------
+            // Add to in-memory list AFTER successful DB insert
+            // ------------------------------------------------------------
+            _mealState.AddScan(barcode);
+
+            // ------------------------------------------------------------
+            // Broadcast success event
+            // ------------------------------------------------------------
             var message = new SseMessage(
                 evt: "scan",
                 data: $"{person.FullName} scanned for {_mealState.CurrentMeal}"
