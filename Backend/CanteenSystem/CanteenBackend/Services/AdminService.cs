@@ -13,9 +13,6 @@ namespace CanteenBackend.Services
     {
         private readonly AdminRepository _adminRepository;
 
-        /// <summary>
-        /// Creates a new AdminService with required dependencies.
-        /// </summary>
         public AdminService(AdminRepository adminRepository)
         {
             _adminRepository = adminRepository;
@@ -24,8 +21,6 @@ namespace CanteenBackend.Services
         /// <summary>
         /// Parses a CSV file and inserts each person into the database.
         /// </summary>
-        /// <param name="file">The uploaded CSV file.</param>
-        /// <returns>A list of ScanResult entries for each row processed.</returns>
         public async Task<List<ScanResult>> ImportPeopleFromCsvAsync(IFormFile file)
         {
             var results = new List<ScanResult>();

@@ -5,27 +5,75 @@ using CanteenBackend.Models;
 namespace CanteenBackend.Data.Repositories
 {
     /// <summary>
-    /// Provides administrative database operations such as bulk inserting people.
+    /// Provides database operations for admin authentication and bulk people import.
     /// </summary>
     public class AdminRepository
     {
         private readonly SqlDataManager _db;
 
-        /// <summary>
-        /// Creates a new AdminRepository using the provided SqlDataManager.
-        /// </summary>
         public AdminRepository(SqlDataManager db)
         {
             _db = db;
         }
 
+        // ============================================================
+        // ADMIN AUTHENTICATION
+        // ============================================================
+
         /// <summary>
-        /// Calls the sp_BulkInsertPeople stored procedure to insert a single person.
+        /// Retrieves an admin record by username using sp_GetAdminByUsername.
         /// </summary>
-        /// <param name="fullName">The person's full name.</param>
-        /// <param name="barcode">The person's barcode.</param>
-        /// <param name="roleId">The role ID (TINYINT).</param>
-        /// <returns>A ScanResult-like struct indicating success or failure.</returns>
+        public AdminRecord? GetAdminByUsername(string username)
+        {
+            var cmd = _db.CreateCommand("sp_GetAdminByUsername", CommandType.StoredProcedure);
+            cmd.Parameters.AddWithValue("@Username", username);
+
+            var table = _db.ExecuteQuery(cmd);
+
+            if (table.Rows.Count == 0)
+                return null;
+
+            var row = table.Rows[0];
+
+            return new AdminRecord
+            {
+                AdminId = Convert.ToInt32(row["AdminId"]),
+                Username = row["Username"].ToString() ?? "",
+                PasswordHash = (byte[])row["PasswordHash"],
+                PasswordSalt = (byte[])row["PasswordSalt"]
+            };
+        }
+
+        /// <summary>
+        /// Creates a new admin using sp_CreateAdmin.
+        /// </summary>
+        public ScanResult CreateAdmin(string username, byte[] hash, byte[] salt)
+        {
+            var cmd = _db.CreateCommand("sp_CreateAdmin", CommandType.StoredProcedure);
+            cmd.Parameters.AddWithValue("@Username", username);
+            cmd.Parameters.AddWithValue("@PasswordHash", hash);
+            cmd.Parameters.AddWithValue("@PasswordSalt", salt);
+
+            var table = _db.ExecuteQuery(cmd);
+
+            if (table.Rows.Count == 0)
+                return new ScanResult(false, "Unknown error");
+
+            var row = table.Rows[0];
+
+            return new ScanResult(
+                Convert.ToInt32(row["Success"]) == 1,
+                row["Message"].ToString() ?? ""
+            );
+        }
+
+        // ============================================================
+        // BULK INSERT PEOPLE (CSV IMPORT)
+        // ============================================================
+
+        /// <summary>
+        /// Inserts a person using sp_BulkInsertPeople.
+        /// </summary>
         public ScanResult InsertPerson(string fullName, string barcode, byte roleId)
         {
             var cmd = _db.CreateCommand("sp_BulkInsertPeople", CommandType.StoredProcedure);
@@ -41,8 +89,8 @@ namespace CanteenBackend.Data.Repositories
             var row = table.Rows[0];
 
             return new ScanResult(
-                success: Convert.ToInt32(row["Success"]) == 1,
-                message: row["Message"].ToString() ?? ""
+                Convert.ToInt32(row["Success"]) == 1,
+                row["Message"].ToString() ?? ""
             );
         }
     }

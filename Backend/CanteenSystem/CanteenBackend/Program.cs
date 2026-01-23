@@ -1,17 +1,23 @@
-﻿using CanteenBackend.Data;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.IdentityModel.Tokens;
+using CanteenBackend.Data;
 using CanteenBackend.Data.Repositories;
 using CanteenBackend.Services;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ------------------------------------------------------------
+// Controllers + Swagger
+// ------------------------------------------------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // ------------------------------------------------------------
-// Database Connection Setup
+// Database Connection
 // ------------------------------------------------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -21,7 +27,7 @@ sqlManager.Connect(connectionString);
 builder.Services.AddSingleton(sqlManager);
 
 // ------------------------------------------------------------
-// Repository Registrations
+// Repositories
 // ------------------------------------------------------------
 builder.Services.AddSingleton<ScanRepository>();
 builder.Services.AddSingleton<PersonRepository>();
@@ -29,12 +35,33 @@ builder.Services.AddSingleton<MealRepository>();
 builder.Services.AddSingleton<AdminRepository>();
 
 // ------------------------------------------------------------
-// Service Registrations
+// Services
 // ------------------------------------------------------------
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<MealSessionState>();
 builder.Services.AddSingleton<EventStream>();
+builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<AdminService>();
+
+// ------------------------------------------------------------
+// JWT Authentication
+// ------------------------------------------------------------
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
+            )
+        };
+    });
 
 var app = builder.Build();
 
@@ -44,7 +71,7 @@ var app = builder.Build();
 app.Use(async (context, next) =>
 {
     var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Incoming {context.Request.Method} {context.Request.Path} from {ip}");
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {context.Request.Method} {context.Request.Path} from {ip}");
     await next();
 });
 
@@ -58,6 +85,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -66,8 +94,8 @@ app.MapControllers();
 // ------------------------------------------------------------
 app.Lifetime.ApplicationStarted.Register(() =>
 {
-    var server = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>();
-    var addresses = server.Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()?.Addresses;
+    var server = app.Services.GetRequiredService<IServer>();
+    var addresses = server.Features.Get<IServerAddressesFeature>()?.Addresses;
 
     Console.WriteLine("========================================");
     Console.WriteLine(" Canteen Backend Started");
@@ -87,6 +115,5 @@ app.Lifetime.ApplicationStarted.Register(() =>
 
     Console.WriteLine("========================================");
 });
-
 
 app.Run();

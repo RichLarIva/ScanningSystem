@@ -119,6 +119,25 @@ END;
 GO
 
 ------------------------------------------------------------
+-- Admins
+------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.tables WHERE name = 'Admins' AND type = 'U'
+)
+BEGIN
+    CREATE TABLE Admins (
+    AdminId INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(100) NOT NULL UNIQUE,
+    PasswordHash VARBINARY(512) NOT NULL,
+    PasswordSalt VARBINARY(128) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    LastLogin DATETIME2 NULL
+);
+    PRINT 'Table CanteenScans created successfully.';
+END;
+GO
+
+------------------------------------------------------------
 -- Computed column for date-only uniqueness
 ------------------------------------------------------------
 IF COL_LENGTH('dbo.CanteenScans', 'ScanDay') IS NULL
@@ -241,3 +260,64 @@ BEGIN
     ');
 END;
 GO
+
+------------------------------------------------------------
+-- Create sp_CreateAdmin if it does not exist
+------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.procedures WHERE name = 'sp_CreateAdmin'
+)
+BEGIN
+EXEC('
+CREATE PROCEDURE dbo.sp_CreateAdmin
+    @Username NVARCHAR(100),
+    @PasswordHash VARBINARY(512),
+    @PasswordSalt VARBINARY(128)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Prevent duplicate usernames
+    IF EXISTS (SELECT 1 FROM dbo.Admins WHERE Username = @Username)
+    BEGIN
+        SELECT 0 AS Success, ''Username already exists'' AS Message;
+        RETURN;
+    END
+
+    INSERT INTO dbo.Admins (Username, PasswordHash, PasswordSalt)
+    VALUES (@Username, @PasswordHash, @PasswordSalt);
+
+    SELECT 1 AS Success, ''Admin created successfully'' AS Message;
+END
+');
+END;
+GO
+
+------------------------------------------------------------
+-- Create sp_GetAdminByUsername if it does not exist
+------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.procedures WHERE name = 'sp_GetAdminByUsername'
+)
+BEGIN
+EXEC('
+CREATE PROCEDURE dbo.sp_GetAdminByUsername
+    @Username NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        AdminId,
+        Username,
+        PasswordHash,
+        PasswordSalt
+    FROM dbo.Admins
+    WHERE Username = @Username;
+END
+');
+END;
+GO
+
+
+SELECT * FROM CanteenScans;
