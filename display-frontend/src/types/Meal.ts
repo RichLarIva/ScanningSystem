@@ -1,13 +1,16 @@
 export const Meal = {
-  Breakfast: 1,
-  Lunch: 2,
-  Dinner: 3,
-  Snack: 4,
-  Special: 5,
+  Breakfast: "Breakfast",
+  Lunch: "Lunch",
+  Dinner: "Dinner",
+  Snack: "Snack",
+  Special: "Special",
 } as const;
 
 export type Meal = (typeof Meal)[keyof typeof Meal];
 
+/**
+ * Convert a Meal enum value into a readable string.
+ */
 export function mealToString(meal: Meal): string {
   switch (meal) {
     case Meal.Breakfast:

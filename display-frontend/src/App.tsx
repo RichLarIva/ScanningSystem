@@ -4,6 +4,7 @@ import './App.css'
 import BubbleBackground from './components/BubbleBackground'
 import Header from './components/Header'
 import { Meal } from './types/Meal'
+import ScannedPopup from './components/ScannedPopup';
 
 function App() {
 
@@ -11,7 +12,7 @@ function App() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentMeal, setCurrentMeal] = useState<Meal>(Meal.Breakfast); 
 
-  useSSE("https://localhost:7220/events", {
+  useSSE("https://localhost:7220/api/events", {
     "scan-success": (data) => {
       const now = new Date();
       const time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
@@ -20,13 +21,15 @@ function App() {
         {id: prev.length + 1, name: data.barcode, timeStamp: time},
         ...prev,
       ])
+      console.log("hey data meal: " + data.meal);
       setCurrentMeal(data.meal);
     },
 
     "duplicate-scan": () =>
     {
+      console.log("duplicate scan event received");
       setIsOpen(true);
-      setTimeout(() => setIsOpen(false), 4000);
+      setTimeout(() => setIsOpen(false), 15000);
     }
   });
 
@@ -72,6 +75,7 @@ function App() {
           hour12: false,
         })}
       />
+      {isOpen && ( <ScannedPopup/>)}
       <BubbleBackground/>
     </div>
   )
