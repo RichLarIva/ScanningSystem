@@ -16,15 +16,15 @@ namespace CanteenBackend.Data
         /// Creates an empty manager. Call Connect() before executing commands.
         /// </summary>
         public SqlDataManager()
-        { 
+        {
         }
 
         /// <summary>
         /// Opens a SQL Server connection using the provided connection string.
         /// </summary>
-        /// <param name="connectionString">The Required Connection string</param>
+        /// <param name="connectionString">The required SQL Server connection string.</param>
         public void Connect(string connectionString)
-        { 
+        {
             try
             {
                 _connection = new SqlConnection(connectionString);
@@ -37,43 +37,27 @@ namespace CanteenBackend.Data
                 throw;
             }
         }
+
         /// <summary> 
         /// Creates a SqlCommand object bound to the active connection. 
         /// Supports both text queries and stored procedures. 
         /// </summary>
         public SqlCommand CreateCommand(string query, CommandType type = CommandType.Text)
         {
-            if(_connection == null)
+            if (_connection == null)
                 throw new InvalidOperationException("SQL connection has not been established.");
 
-            var cmd = new SqlCommand(query, _connection)
+            return new SqlCommand(query, _connection)
             {
                 CommandTimeout = 60,
                 CommandType = type
             };
-
-            return cmd;
         }
 
-        #region Stored Procedure Helpers
         /// <summary>
-        /// Calls the AddScan to process a barcode scan.
+        /// Executes a SELECT query or stored procedure that returns rows.
+        /// Returns the result as a DataTable.
         /// </summary>
-        /// <param name="barcode">scanned barcode input</param>
-        /// <returns>A DataTable containing the result of the scan operation.</returns>
-        public DataTable Call_AddScan(string barcode)
-        {
-            var command = CreateCommand("sp_AddScan", CommandType.StoredProcedure);
-            command.Parameters.AddWithValue("@Barcode", barcode);
-
-            return ExecuteQuery(command);
-        }
-
-
-        #endregion
-
-        #region Generic Execution Helpers
-
         public DataTable ExecuteQuery(SqlCommand command)
         {
             var table = new DataTable();
@@ -83,7 +67,7 @@ namespace CanteenBackend.Data
                 using var adapter = new SqlDataAdapter(command);
                 adapter.Fill(table);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine($"SQL query error: {ex.Message}");
                 throw;
@@ -91,19 +75,27 @@ namespace CanteenBackend.Data
             return table;
         }
 
+        /// <summary>
+        /// Executes INSERT, UPDATE, DELETE, or stored procedures that do not return rows.
+        /// Returns the number of affected rows.
+        /// </summary>
         public int ExecuteNonQuery(SqlCommand command)
         {
             try
             {
                 return command.ExecuteNonQuery();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"SQL scalar error: {ex.Message}");
+                Console.WriteLine($"SQL NonQuery error: {ex.Message}");
                 throw;
             }
         }
 
+        /// <summary>
+        /// Executes a query that returns a single value (first column, first row).
+        /// Useful for COUNT(), SCOPE_IDENTITY(), etc.
+        /// </summary>
         public object? ExecuteScalar(SqlCommand command)
         {
             try
@@ -117,14 +109,12 @@ namespace CanteenBackend.Data
             }
         }
 
-        #endregion
-
         /// <summary>
         /// Closes the SQL connection if it is open.
         /// </summary>
         public void Close()
         {
-            if(_connection != null && _connection.State != ConnectionState.Closed)
+            if (_connection != null && _connection.State != ConnectionState.Closed)
             {
                 _connection.Close();
             }
